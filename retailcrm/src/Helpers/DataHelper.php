@@ -25,6 +25,8 @@ class DataHelper
 
             if (is_null($haystack[$key]) || $haystack[$key] === '' || count($haystack[$key]) == 0) {
                 unset($haystack[$key]);
+            } elseif (!is_array($value)) {
+                $haystack[$key] = trim($value);
             }
         }
 
