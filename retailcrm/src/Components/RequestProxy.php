@@ -28,6 +28,10 @@ class RequestProxy
 
                 if (isset($response['errors'])) {
                     foreach ($response['errors'] as $error) {
+                        if (is_array($error)) {
+                            $error = @implode(', ', $error);
+                        }
+
                         $this->logger->write(
                             "[$method] $error \n",
                             $this->container->errorLog

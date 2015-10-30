@@ -76,11 +76,15 @@ class ApiHelper
         $this->logger->put($timemark, $this->container->customersLog);
     }
 
-    public function updateCustomers($customers)
+    public function updateCustomers($customers, $searchEdit = false)
     {
         $timemark = date('Y-m-d H:i:s');
         foreach ($customers as $customer) {
-            $this->api->ordersEdit($customer);
+            if ($searchEdit) {
+                $this->checkCustomers($customer, true);
+            } else {
+                $this->api->ordersEdit($customer);
+            }
             time_nanosleep(0, 250000000);
         }
 
@@ -151,7 +155,7 @@ class ApiHelper
         return $orders;
     }
 
-    private function checkCustomers($customer)
+    private function checkCustomers($customer, $searchEdit = false)
     {
 
         $criteria = array(
@@ -188,6 +192,11 @@ class ApiHelper
                     );
                     $_externalId = $customer['externalId'];
                 };
+
+                if ($searchEdit) {
+                    $customer['externalId'] = $_externalId;
+                    $this->api->customersEdit($customer);
+                }
 
                 return $_externalId;
             }
