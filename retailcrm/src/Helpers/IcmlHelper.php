@@ -96,11 +96,19 @@ class IcmlHelper
     {
         foreach ($offers as $offer) {
 
+            if (!array_key_exists('id', $offer)) {
+                continue;
+            }
+
             $e = $this->offers->appendChild(
                 $this->document->createElement('offer')
             );
 
             $e->setAttribute('id', $offer['id']);
+
+            if (!array_key_exists('productId', $offer) || empty($offer['productId'])) {
+                $offer['productId'] = $offer['id'];
+            }
             $e->setAttribute('productId', $offer['productId']);
 
             if (!empty($offer['quantity'])) {
@@ -109,16 +117,30 @@ class IcmlHelper
                 $e->setAttribute('quantity', 0);
             }
 
-            foreach ($offer['categoryId'] as $categoryId) {
+            if (is_array($offer['categoryId'])) {
+                foreach ($offer['categoryId'] as $categoryId) {
+                    $e->appendChild(
+                        $this->document->createElement('categoryId', $categoryId)
+                    );
+                }
+            } else {
                 $e->appendChild(
-                    $this->document->createElement('categoryId', $categoryId)
+                    $this->document->createElement('categoryId', $offer['categoryId'])
                 );
+            }
+
+            if (!array_key_exists('name', $offer) || empty($offer['name'])) {
+                $offer['name'] = 'Без названия';
+            }
+
+            if (!array_key_exists('productName', $offer) || empty($offer['productName'])) {
+                $offer['name'] = $offer['name'];
             }
 
             $offerKeys  = array_keys($offer);
 
             foreach ($offerKeys as $key) {
-                if (in_array($key, $this->properties)) {
+                if (in_array($key, $this->properties) && !is_null($offer[$key]) && $offer[$key] !== '') {
                     $e->appendChild(
                         $this->document->createElement($key)
                     )->appendChild(
@@ -126,7 +148,10 @@ class IcmlHelper
                     );
                 }
 
-                if (in_array($key, array_keys($this->params))) {
+                if (
+                    in_array($key, array_keys($this->params)) &&
+                    !is_null($offer[$key]) && $offer[$key] !== ''
+                ) {
                     $param = $this->document->createElement('param');
                     $param->setAttribute('code', $key);
                     $param->setAttribute('name', $this->params[$key]);
