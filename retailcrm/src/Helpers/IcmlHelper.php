@@ -74,6 +74,10 @@ class IcmlHelper
     private function addCategories($categories)
     {
         foreach($categories as $category) {
+            if (!array_key_exists('name', $category) || !array_key_exists('id', $category)) {
+                continue;
+            }
+
             $e = $this->categories->appendChild(
                 $this->document->createElement(
                     'category', $category['name']
@@ -82,7 +86,7 @@ class IcmlHelper
 
             $e->setAttribute('id', $category['id']);
 
-            if ($category['parentId'] > 0) {
+            if (array_key_exists('parentId', $category) && $category['parentId'] > 0) {
                 $e->setAttribute('parentId', $category['parentId']);
             }
         }
