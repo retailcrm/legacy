@@ -5,19 +5,7 @@ class IcmlHelper
     protected $shop;
     protected $file;
 
-    protected $properties;
-    protected $params;
-
-    protected $document;
-    protected $categories;
-    protected $offers;
-
-    public function __construct($shop, $file)
-    {
-        $this->shop = $shop;
-        $this->file = $file;
-
-        $this->properties = array(
+    protected $properties = array(
             'name',
             'productName',
             'price',
@@ -27,14 +15,16 @@ class IcmlHelper
             'url',
             'xmlId',
             'productActivity'
-        );
+    );
 
-        $this->params = array(
-            'article' => 'Артикул',
-            'color' => 'Цвет',
-            'weight' => 'Вес',
-            'size' => 'Размер',
-        );
+    protected $document;
+    protected $categories;
+    protected $offers;
+
+    public function __construct($shop, $file)
+    {
+        $this->shop = $shop;
+        $this->file = $file;
     }
 
     public function generate($categories, $offers)
@@ -73,6 +63,8 @@ class IcmlHelper
 
     private function addCategories($categories)
     {
+        $categories = DataHelper::filterRecursive($categories);
+
         foreach($categories as $category) {
             if (!array_key_exists('name', $category) || !array_key_exists('id', $category)) {
                 continue;
@@ -94,6 +86,8 @@ class IcmlHelper
 
     private function addOffers($offers)
     {
+        $offers = DataHelper::filterRecursive($offers);
+
         foreach ($offers as $offer) {
 
             if (!array_key_exists('id', $offer)) {
@@ -137,30 +131,42 @@ class IcmlHelper
                 $offer['productName'] = $offer['name'];
             }
 
-            $offerKeys  = array_keys($offer);
+            unset($offer['id'], $offer['productId'], $offer['categoryId'], $offer['quantity']);
+            array_walk($offer, array($this, 'setOffersProperties'), $e);
 
-            foreach ($offerKeys as $key) {
-                if (in_array($key, $this->properties) && !is_null($offer[$key]) && $offer[$key] !== '') {
-                    $e->appendChild(
-                        $this->document->createElement($key)
-                    )->appendChild(
-                        $this->document->createTextNode($offer[$key])
-                    );
-                }
-
-                if (
-                    in_array($key, array_keys($this->params)) &&
-                    !is_null($offer[$key]) && $offer[$key] !== ''
-                ) {
-                    $param = $this->document->createElement('param');
-                    $param->setAttribute('code', $key);
-                    $param->setAttribute('name', $this->params[$key]);
-                    $param->appendChild(
-                        $this->document->createTextNode($offer[$key])
-                    );
-                    $e->appendChild($param);
-                }
+            if (array_key_exists('params', $offer) && !empty($offer['params'])) {
+                array_walk($offer['params'], array($this, 'setOffersParams'), $e);
             }
+        }
+    }
+
+    private function setOffersProperties($value, $key, &$e) {
+        if (in_array($key, $this->properties) && $key != 'params') {
+            $e->appendChild(
+                $this->document->createElement($key)
+            )->appendChild(
+                $this->document->createTextNode($value)
+            );
+        }
+    }
+
+    private function setOffersParams($value, $key, &$e) {
+        if (
+            array_key_exists('code', $value) &&
+            array_key_exists('name', $value) &&
+            array_key_exists('value', $value) &&
+            !empty($value['code']) &&
+            !empty($value['name']) &&
+            !empty($value['value'])
+        ) {
+            $param = $this->document->createElement('param');
+            $param->setAttribute('code', $value['code']);
+            $param->setAttribute('name', $value['name']);
+            $param->appendChild(
+                $this->document->createTextNode($value['value'])
+            );
+
+            $e->appendChild($param);
         }
     }
 }
