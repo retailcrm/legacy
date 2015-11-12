@@ -134,7 +134,7 @@ class IcmlHelper
             }
 
             if (!array_key_exists('productName', $offer) || empty($offer['productName'])) {
-                $offer['name'] = $offer['name'];
+                $offer['productName'] = $offer['name'];
             }
 
             $offerKeys  = array_keys($offer);
