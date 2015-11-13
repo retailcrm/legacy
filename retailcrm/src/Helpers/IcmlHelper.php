@@ -5,19 +5,7 @@ class IcmlHelper
     protected $shop;
     protected $file;
 
-    protected $properties;
-    protected $params;
-
-    protected $document;
-    protected $categories;
-    protected $offers;
-
-    public function __construct($shop, $file)
-    {
-        $this->shop = $shop;
-        $this->file = $file;
-
-        $this->properties = array(
+    protected $properties = array(
             'name',
             'productName',
             'price',
@@ -27,14 +15,16 @@ class IcmlHelper
             'url',
             'xmlId',
             'productActivity'
-        );
+    );
 
-        $this->params = array(
-            'article' => 'Артикул',
-            'color' => 'Цвет',
-            'weight' => 'Вес',
-            'size' => 'Размер',
-        );
+    protected $document;
+    protected $categories;
+    protected $offers;
+
+    public function __construct($shop, $file)
+    {
+        $this->shop = $shop;
+        $this->file = $file;
     }
 
     public function generate($categories, $offers)
@@ -73,7 +63,13 @@ class IcmlHelper
 
     private function addCategories($categories)
     {
+        $categories = DataHelper::filterRecursive($categories);
+
         foreach($categories as $category) {
+            if (!array_key_exists('name', $category) || !array_key_exists('id', $category)) {
+                continue;
+            }
+
             $e = $this->categories->appendChild(
                 $this->document->createElement(
                     'category', $category['name']
@@ -82,7 +78,7 @@ class IcmlHelper
 
             $e->setAttribute('id', $category['id']);
 
-            if ($category['parentId'] > 0) {
+            if (array_key_exists('parentId', $category) && $category['parentId'] > 0) {
                 $e->setAttribute('parentId', $category['parentId']);
             }
         }
@@ -90,13 +86,23 @@ class IcmlHelper
 
     private function addOffers($offers)
     {
+        $offers = DataHelper::filterRecursive($offers);
+
         foreach ($offers as $offer) {
+
+            if (!array_key_exists('id', $offer)) {
+                continue;
+            }
 
             $e = $this->offers->appendChild(
                 $this->document->createElement('offer')
             );
 
             $e->setAttribute('id', $offer['id']);
+
+            if (!array_key_exists('productId', $offer) || empty($offer['productId'])) {
+                $offer['productId'] = $offer['id'];
+            }
             $e->setAttribute('productId', $offer['productId']);
 
             if (!empty($offer['quantity'])) {
@@ -105,33 +111,62 @@ class IcmlHelper
                 $e->setAttribute('quantity', 0);
             }
 
-            foreach ($offer['categoryId'] as $categoryId) {
+            if (is_array($offer['categoryId'])) {
+                foreach ($offer['categoryId'] as $categoryId) {
+                    $e->appendChild(
+                        $this->document->createElement('categoryId', $categoryId)
+                    );
+                }
+            } else {
                 $e->appendChild(
-                    $this->document->createElement('categoryId', $categoryId)
+                    $this->document->createElement('categoryId', $offer['categoryId'])
                 );
             }
 
-            $offerKeys  = array_keys($offer);
-
-            foreach ($offerKeys as $key) {
-                if (in_array($key, $this->properties)) {
-                    $e->appendChild(
-                        $this->document->createElement($key)
-                    )->appendChild(
-                        $this->document->createTextNode($offer[$key])
-                    );
-                }
-
-                if (in_array($key, array_keys($this->params))) {
-                    $param = $this->document->createElement('param');
-                    $param->setAttribute('code', $key);
-                    $param->setAttribute('name', $this->params[$key]);
-                    $param->appendChild(
-                        $this->document->createTextNode($offer[$key])
-                    );
-                    $e->appendChild($param);
-                }
+            if (!array_key_exists('name', $offer) || empty($offer['name'])) {
+                $offer['name'] = 'Без названия';
             }
+
+            if (!array_key_exists('productName', $offer) || empty($offer['productName'])) {
+                $offer['productName'] = $offer['name'];
+            }
+
+            unset($offer['id'], $offer['productId'], $offer['categoryId'], $offer['quantity']);
+            array_walk($offer, array($this, 'setOffersProperties'), $e);
+
+            if (array_key_exists('params', $offer) && !empty($offer['params'])) {
+                array_walk($offer['params'], array($this, 'setOffersParams'), $e);
+            }
+        }
+    }
+
+    private function setOffersProperties($value, $key, &$e) {
+        if (in_array($key, $this->properties) && $key != 'params') {
+            $e->appendChild(
+                $this->document->createElement($key)
+            )->appendChild(
+                $this->document->createTextNode($value)
+            );
+        }
+    }
+
+    private function setOffersParams($value, $key, &$e) {
+        if (
+            array_key_exists('code', $value) &&
+            array_key_exists('name', $value) &&
+            array_key_exists('value', $value) &&
+            !empty($value['code']) &&
+            !empty($value['name']) &&
+            !empty($value['value'])
+        ) {
+            $param = $this->document->createElement('param');
+            $param->setAttribute('code', $value['code']);
+            $param->setAttribute('name', $value['name']);
+            $param->appendChild(
+                $this->document->createTextNode($value['value'])
+            );
+
+            $e->appendChild($param);
         }
     }
 }
