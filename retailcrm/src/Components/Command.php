@@ -10,6 +10,7 @@ class Command
     private $limit;
     private $update;
     private $container;
+    private $debug;
 
     public function __construct($arguments)
     {
@@ -22,6 +23,7 @@ class Command
         $this->limit   = isset($arguments['l']);
         $this->update  = isset($arguments['u']);
         $this->custom  = isset($arguments['c']);
+        $this->debug  = isset($arguments['d']);
 
         $this->container = Container::getInstance();
 
@@ -40,9 +42,20 @@ class Command
             return;
         }
 
+        $debug = new DebugHelper();
+        if ($this->debug) {
+            $debug->write(sprintf('Start %s', ucfirst($this->run)));
+        }
+
         $command = 'run' . ucfirst($this->run);
 
-        return $this->$command();
+        $result = $this->$command();
+
+        if ($this->debug) {
+            $debug->write(sprintf('End %s', ucfirst($this->run)));
+        }
+
+        return $result;
     }
 
     public function runDump()
