@@ -10,7 +10,7 @@ if (
 
 require_once 'bootstrap.php';
 
-$options = getopt('luce:m:p:r:h:');
+$options = getopt('dluce:m:p:r:h:');
 
 if (isset($options['e'])) {
     $command = new Command($options);

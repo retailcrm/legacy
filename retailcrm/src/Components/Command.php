@@ -10,6 +10,7 @@ class Command
     private $limit;
     private $update;
     private $container;
+    private $debug;
 
     public function __construct($arguments)
     {
@@ -22,6 +23,7 @@ class Command
         $this->limit   = isset($arguments['l']);
         $this->update  = isset($arguments['u']);
         $this->custom  = isset($arguments['c']);
+        $this->debug   = isset($arguments['d']);
 
         $this->container = Container::getInstance();
 
@@ -40,9 +42,17 @@ class Command
             return;
         }
 
-        $command = 'run' . ucfirst($this->run);
+        $debug = new DebugHelper();
+        if ($this->debug) {
+            $debug->write(sprintf('Start %s', ucfirst($this->run)));
+        }
 
-        return $this->$command();
+        $command = sprintf('run%s', ucfirst($this->run));
+        $this->$command();
+
+        if ($this->debug) {
+            $debug->write(sprintf('End %s', ucfirst($this->run)));
+        }
     }
 
     public function runDump()
@@ -52,9 +62,12 @@ class Command
         $dbName = $this->container->settings['db']['dbname'];
         $dbHost = $this->container->settings['db']['host'];
 
-        $dumpfile = $this->container->saveDir . "dbdump.sql.gz";
+        $dumpfile = sprintf('%sdbdump.sql.gz', $this->container->saveDir);
 
-        $cmd = "mysqldump -u $dbUser --password=$dbPass --host=$dbHost $dbName | gzip --best > $dumpfile";
+        $cmd = sprintf(
+            'mysqldump -u %s --password=%s --host=%s %s | gzip --best > %s',
+            $dbUser, $dbPass, $dbHost, $dbName, $dumpfile
+        );
         passthru($cmd);
     }
 
@@ -254,12 +267,10 @@ class Command
         $handler = $rule->getHandler('AmoHandler');
         $data = $handler->prepare($amo);
 
-        if (!empty($data)) {
-            if (!empty($data['customers'])) {
-                $this->requestHelper->uploadCustomers($data['customers']);
-                if (!empty($data['orders'])) {
-                   $this->requestHelper->uploadOrders($data['orders'], true);
-                }
+        if (!empty($data) && !empty($data['customers'])) {
+            $this->requestHelper->uploadCustomers($data['customers']);
+            if (!empty($data['orders'])) {
+                $this->requestHelper->uploadOrders($data['orders'], true);
             }
         }
     }
