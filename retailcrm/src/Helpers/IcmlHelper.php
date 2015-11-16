@@ -4,6 +4,7 @@ class IcmlHelper
 {
     protected $shop;
     protected $file;
+    protected $tmpFile;
 
     protected $properties = array(
             'name',
@@ -17,48 +18,93 @@ class IcmlHelper
             'productActivity'
     );
 
-    protected $document;
+    protected $xml;
     protected $categories;
     protected $offers;
+
+    protected $chunk = 500;
 
     public function __construct($shop, $file)
     {
         $this->shop = $shop;
         $this->file = $file;
+        $this->tmpFile = sprintf('%s.tmp', $file);
     }
 
     public function generate($categories, $offers)
     {
-        $string = '<?xml version="1.0" encoding="UTF-8"?>
-            <yml_catalog date="'.date('Y-m-d H:i:s').'">
-                <shop>
-                    <name>'.$this->shop.'</name>
-                    <categories/>
-                    <offers/>
-                </shop>
-            </yml_catalog>
-        ';
+        if (!file_exists($this->tmpFile)) {
+            $this->writeHead();
+        }
 
-        $xml = new SimpleXMLElement(
-            $string,
-            LIBXML_NOENT |LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
+        if (!empty($categories)) {
+            $this->writeCategories($categories);
+            unset($categories);
+        }
+
+        if (!empty($offers)) {
+            $this->writeOffers($offers);
+            unset($offers);
+        }
+
+        $dom = dom_import_simplexml(simplexml_load_file($this->tmpFile))->ownerDocument;
+        $dom->formatOutput = true;
+        $formatted = $dom->saveXML();
+
+        unset($dom, $this->xml);
+
+        file_put_contents($this->tmpFile, $formatted);
+        rename($this->tmpFile, $this->file);
+    }
+
+    private function loadXml()
+    {
+        return new SimpleXMLElement(
+                $this->tmpFile,
+                LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE,
+                true
+        );
+    }
+
+    private function writeHead()
+    {
+        $string = sprintf(
+            '<?xml version="1.0" encoding="UTF-8"?><yml_catalog date="%s"><shop><name>%s</name><categories/><offers/></shop></yml_catalog>',
+            date('Y-m-d H:i:s'),
+            $this->shop
         );
 
-        $this->document = new DOMDocument();
-        $this->document->preserveWhiteSpace = false;
-        $this->document->formatOutput = true;
-        $this->document->loadXML($xml->asXML());
+        file_put_contents($this->tmpFile, $string, LOCK_EX);
+    }
 
-        $this->categories = $this->document
-            ->getElementsByTagName('categories')->item(0);
-        $this->offers = $this->document
-            ->getElementsByTagName('offers')->item(0);
+    private function writeCategories($categories)
+    {
+        $chunkCategories = array_chunk($categories, $this->chunk);
+        foreach ($chunkCategories as $categories) {
+            $this->xml = $this->loadXml();
 
-        $this->addCategories($categories);
-        $this->addOffers($offers);
+            $this->categories = $this->xml->shop->categories;
+            $this->addCategories($categories);
 
-        $this->document->saveXML();
-        $this->document->save($this->file);
+            $this->xml->asXML($this->tmpFile);
+        }
+
+        unset($this->categories);
+    }
+
+    private function writeOffers($offers)
+    {
+        $chunkOffers = array_chunk($offers, $this->chunk);
+        foreach ($chunkOffers as $offers) {
+            $this->xml = $this->loadXml();
+
+            $this->offers = $this->xml->shop->offers;
+            $this->addOffers($offers);
+
+            $this->xml->asXML($this->tmpFile);
+        }
+
+        unset($this->offers);
     }
 
     private function addCategories($categories)
@@ -70,16 +116,12 @@ class IcmlHelper
                 continue;
             }
 
-            $e = $this->categories->appendChild(
-                $this->document->createElement(
-                    'category', $category['name']
-                )
-            );
+            $e = $this->categories->addChild('category', $category['name']);
 
-            $e->setAttribute('id', $category['id']);
+            $e->addAttribute('id', $category['id']);
 
             if (array_key_exists('parentId', $category) && $category['parentId'] > 0) {
-                $e->setAttribute('parentId', $category['parentId']);
+                $e->addAttribute('parentId', $category['parentId']);
             }
         }
      }
@@ -88,39 +130,33 @@ class IcmlHelper
     {
         $offers = DataHelper::filterRecursive($offers);
 
-        foreach ($offers as $offer) {
+        foreach ($offers as $key => $offer) {
 
             if (!array_key_exists('id', $offer)) {
                 continue;
             }
 
-            $e = $this->offers->appendChild(
-                $this->document->createElement('offer')
-            );
+            $e = $this->offers->addChild('offer');
 
-            $e->setAttribute('id', $offer['id']);
+            $e->addAttribute('id', $offer['id']);
 
             if (!array_key_exists('productId', $offer) || empty($offer['productId'])) {
                 $offer['productId'] = $offer['id'];
             }
-            $e->setAttribute('productId', $offer['productId']);
+            $e->addAttribute('productId', $offer['productId']);
 
             if (!empty($offer['quantity'])) {
-                $e->setAttribute('quantity', (int) $offer['quantity']);
+                $e->addAttribute('quantity', (int) $offer['quantity']);
             } else {
-                $e->setAttribute('quantity', 0);
+                $e->addAttribute('quantity', 0);
             }
 
             if (is_array($offer['categoryId'])) {
                 foreach ($offer['categoryId'] as $categoryId) {
-                    $e->appendChild(
-                        $this->document->createElement('categoryId', $categoryId)
-                    );
+                    $e->addChild('categoryId', $categoryId);
                 }
             } else {
-                $e->appendChild(
-                    $this->document->createElement('categoryId', $offer['categoryId'])
-                );
+                $e->addChild('categoryId', $offer['categoryId']);
             }
 
             if (!array_key_exists('name', $offer) || empty($offer['name'])) {
@@ -137,16 +173,14 @@ class IcmlHelper
             if (array_key_exists('params', $offer) && !empty($offer['params'])) {
                 array_walk($offer['params'], array($this, 'setOffersParams'), $e);
             }
+
+            unset($offers[$key]);
         }
     }
 
     private function setOffersProperties($value, $key, &$e) {
         if (in_array($key, $this->properties) && $key != 'params') {
-            $e->appendChild(
-                $this->document->createElement($key)
-            )->appendChild(
-                $this->document->createTextNode($value)
-            );
+            $e->addChild($key, htmlspecialchars($value));
         }
     }
 
@@ -159,14 +193,9 @@ class IcmlHelper
             !empty($value['name']) &&
             !empty($value['value'])
         ) {
-            $param = $this->document->createElement('param');
-            $param->setAttribute('code', $value['code']);
-            $param->setAttribute('name', $value['name']);
-            $param->appendChild(
-                $this->document->createTextNode($value['value'])
-            );
-
-            $e->appendChild($param);
+            $param = $e->addChild('param', htmlspecialchars($value['value']));
+            $param->addAttribute('code', $value['code']);
+            $param->addAttribute('name', htmlspecialchars($value['name']));
         }
     }
 }
