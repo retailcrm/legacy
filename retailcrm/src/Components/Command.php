@@ -62,13 +62,30 @@ class Command
         $dbName = $this->container->settings['db']['dbname'];
         $dbHost = $this->container->settings['db']['host'];
 
-        $dumpfile = sprintf('%sdbdump.sql.gz', $this->container->saveDir);
+        switch ($this->container->settings['db']['driver']) {
+            case 'mysql':
+                $cmd = sprintf(
+                    'mysqldump -u %s --password=%s --host=%s %s',
+                    $dbUser, $dbPass, $dbHost, $dbName
+                );
+                break;
+            case 'pgsql':
+                $cmd = sprintf(
+                    'PGPASSWORD=\'%s\' pg_dump -U %s -h %s %s',
+                    $dbPass, $dbUser, $dbHost, $dbName
+                );
+                break;
+            default:
+                CommandHelper::dumpNotice();
+                return;
+        }
 
-        $cmd = sprintf(
-            'mysqldump -u %s --password=%s --host=%s %s | gzip --best > %s',
-            $dbUser, $dbPass, $dbHost, $dbName, $dumpfile
+        passthru(
+            sprintf(
+                '%s | gzip --best > %sdbdump.sql.gz',
+                $cmd, $this->container->saveDir
+            )
         );
-        passthru($cmd);
     }
 
     public function runIcml()
