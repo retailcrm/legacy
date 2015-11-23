@@ -86,28 +86,40 @@ class DataHelper
         }
 
         $result = array();
+
         $params = $_SERVER['argv'];
 
-        while (list(, $p) = each($params)) {
-            if ($p{0} == '-') {
-                $pname = substr($p, 1);
+        foreach ($params as $key => $param) {
+            if ($param{0} == '-') {
+                $name = substr($param, 1);
                 $value = true;
-                if ($pname{0} == '-') {
-                    $pname = substr($pname, 1);
-                    if (strpos($p, '=') !== false) {
-                        list($pname, $value) = explode('=', substr($p, 2), 2);
+
+                if ($name{0} == '-') {
+                    $name = substr($name, 1);
+                    if (strpos($param, '=') !== false) {
+                        $long = explode('=', substr($param, 2), 2);
+                        $name = $long[0];
+                        $value = $long[1];
+                        unset($long);
                     }
                 }
 
-                $nextparm = current($params);
-                if ($value === true && $nextparm !== false && $nextparm{0} != '-') {
-                    list(, $value) = each($params);
+                if (
+                    isset($params[$key + 1]) &&
+                    $value === true &&
+                    $params[$key + 1] !== false &&
+                    $params[$key + 1]{0} != '-'
+                ) {
+                    $value = $params[$key + 1];
                 }
-                $result[$pname] = $value;
+
+                $result[$name] = $value;
             } else {
-                $result[] = $p;
+                $result[] = $param;
             }
         }
+
+        unset($params);
 
         return empty($result) ? false : $result;
     }
