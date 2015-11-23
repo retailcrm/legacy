@@ -12,9 +12,15 @@ require_once 'bootstrap.php';
 
 $options = getopt('dluce:m:p:r:h:');
 
+if (!$options || $options == -1) {
+    $options = DataHelper::getOpt();
+}
+
 if (isset($options['e'])) {
     $command = new Command($options);
     $command->run();
+} elseif (!$options) {
+    CommandHelper::notWorkGetOptNotice();
 } else {
     CommandHelper::runHelp();
 }

@@ -78,4 +78,37 @@ class DataHelper
 
         return $uids;
     }
+
+    public static function getOpt()
+    {
+        if (!array_key_exists('argv', $_SERVER)) {
+            return false;
+        }
+
+        $result = array();
+        $params = $_SERVER['argv'];
+
+        while (list(, $p) = each($params)) {
+            if ($p{0} == '-') {
+                $pname = substr($p, 1);
+                $value = true;
+                if ($pname{0} == '-') {
+                    $pname = substr($pname, 1);
+                    if (strpos($p, '=') !== false) {
+                        list($pname, $value) = explode('=', substr($p, 2), 2);
+                    }
+                }
+
+                $nextparm = current($params);
+                if ($value === true && $nextparm !== false && $nextparm{0} != '-') {
+                    list(, $value) = each($params);
+                }
+                $result[$pname] = $value;
+            } else {
+                $result[] = $p;
+            }
+        }
+
+        return empty($result) ? false : $result;
+    }
 }
