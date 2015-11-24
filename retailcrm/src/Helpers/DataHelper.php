@@ -78,49 +78,4 @@ class DataHelper
 
         return $uids;
     }
-
-    public static function getOpt()
-    {
-        if (!array_key_exists('argv', $_SERVER)) {
-            return false;
-        }
-
-        $result = array();
-
-        $params = $_SERVER['argv'];
-
-        foreach ($params as $key => $param) {
-            if ($param{0} == '-') {
-                $name = substr($param, 1);
-                $value = true;
-
-                if ($name{0} == '-') {
-                    $name = substr($name, 1);
-                    if (strpos($param, '=') !== false) {
-                        $long = explode('=', substr($param, 2), 2);
-                        $name = $long[0];
-                        $value = $long[1];
-                        unset($long);
-                    }
-                }
-
-                if (
-                    isset($params[$key + 1]) &&
-                    $value === true &&
-                    $params[$key + 1] !== false &&
-                    $params[$key + 1]{0} != '-'
-                ) {
-                    $value = $params[$key + 1];
-                }
-
-                $result[$name] = $value;
-            } else {
-                $result[] = $param;
-            }
-        }
-
-        unset($params);
-
-        return empty($result) ? false : $result;
-    }
 }
