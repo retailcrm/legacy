@@ -43,8 +43,8 @@ class OrdersBuilder extends Builder
         $query = $this->rule->getSQL('orders_uid');
         $handler = $this->rule->getHandler('OrdersHandler');
         $this->sql = $this->container->db->prepare($query);
-        $this->sql->bindParam(':orderIds', $uids);
         $uids = DataHelper::explodeUids($uidString);
+        $this->sql->bindParam(':orderIds', $uids);
 
         return $this->build($handler);
     }
