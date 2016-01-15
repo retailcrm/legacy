@@ -5,7 +5,7 @@ class CommandHelper
     public static function runHelp()
     {
         echo "\n\033[35;2;18mUsage:\033[0m\n";
-        echo "  /usr/bin/php [-i /etc/php5/cli/php.ini] -f app.php -e command [-l] [-u] [-p ids] [-r reference] [-h history] [-m mail@example.com]\n";
+        echo "  /usr/bin/php [-c /etc/php5/cli/php.ini] -f app.php -e command [-l] [-u] [-p ids] [-r reference] [-h history] [-m mail@example.com]\n";
         echo "\n\033[35;2;18mCommands:\033[0m\n";
         echo "  icml\t\tGenerate icml export file\n";
         echo "  history\tGet data from crm\n";
