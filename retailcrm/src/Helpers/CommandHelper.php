@@ -25,6 +25,16 @@ class CommandHelper
         echo "  -h\t\tHistory type, if type is set only this history will be recieved\n";
     }
 
+    public static function dumpNotice()
+    {
+        echo "\033[0;31mUnfortunately for the database can not be used to make the dump\033[0m\n";
+    }
+
+    public static function notWorkGetOptNotice()
+    {
+        echo "\033[0;31mDoes not function getopt. It is used to obtain the parameters from the command line. Please refer to the server administrator.\033[0m\n";
+    }
+
     public static function updateNotice()
     {
         echo "\033[0;31mFull update is not allowed, please select one of the following flags: limit, set of identifiers or a specific id\033[0m\n";

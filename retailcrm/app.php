@@ -10,11 +10,20 @@ if (
 
 require_once 'bootstrap.php';
 
-$options = getopt('dluce:m:p:r:h:');
+$shortopts = 'dluce:m:p:r:h:';
+
+$options = getopt($shortopts);
+
+if (!$options || $options == -1) {
+    $opt = new OptHelper($shortopts);
+    $options = $opt->get();
+}
 
 if (isset($options['e'])) {
     $command = new Command($options);
     $command->run();
+} elseif (!$options) {
+    CommandHelper::notWorkGetOptNotice();
 } else {
     CommandHelper::runHelp();
 }

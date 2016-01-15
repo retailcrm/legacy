@@ -83,7 +83,7 @@ class ApiHelper
             if ($searchEdit) {
                 $this->checkCustomers($customer, true);
             } else {
-                $this->api->ordersEdit($customer);
+                $this->api->customersEdit($customer);
             }
             time_nanosleep(0, 250000000);
         }
