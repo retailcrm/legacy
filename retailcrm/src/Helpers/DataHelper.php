@@ -4,7 +4,7 @@ class DataHelper
 {
     public static function getDate($file)
     {
-        if (file_exists($file)) {
+        if (file_exists($file) && 1 < filesize($file)) {
             $result = file_get_contents($file);
         } else {
             $result = date(
