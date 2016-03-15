@@ -46,23 +46,22 @@ class RequestProxy
                 "[$method] " . $e->getMessage() . "\n",
                 $this->container->errorLog
             );
-            
+
             return null;
         } catch (InvalidJsonException $e) {
             $this->logger->write(
                 "[$method] " . $e->getMessage() . "\n",
                 $this->container->errorLog
             );
-            
+
             return null;
         } catch (InvalidArgumentException $e) {
             $this->logger->write(
                 "[$method] " . $e->getMessage() . "\n",
                 $this->container->errorLog
             );
-            
+
             return null;
         }
-        
     }
 }

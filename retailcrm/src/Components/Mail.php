@@ -13,7 +13,7 @@ class Mail
         $this->mailBox = $mailBox;
 
         if (is_array($this->container->mail)) {
-            if(isset($this->container->mail[$mailBox])) {
+            if (isset($this->container->mail[$mailBox])) {
                 $this->mailSettings = explode(
                     ',',
                     $this->container->mail[$mailBox]
@@ -32,6 +32,7 @@ class Mail
 
     public function parse()
     {
+
         $server = new Server(
             $this->mailSettings[2],
             $this->mailSettings[3],
@@ -42,6 +43,10 @@ class Mail
             $this->mailSettings[0],
             $this->mailSettings[1]
         );
+
+        if (!empty($this->mailSettings[5])) {
+            $server->setMailBox($this->mailSettings[5]);
+        }
 
         $mailCriteria = $this->clean($this->mailBox, 'criteria');
         $mailHandler  = $this->clean($this->mailBox, 'handler');
