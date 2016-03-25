@@ -23,6 +23,7 @@ class IcmlHelper
     protected $offers;
 
     protected $chunk = 500;
+    protected $fileLifeTime = 3600;
 
     public function __construct($shop, $file)
     {
@@ -33,28 +34,37 @@ class IcmlHelper
 
     public function generate($categories, $offers)
     {
-        if (!file_exists($this->tmpFile)) {
+        if (file_exists($this->tmpFile)) {
+            if (filectime($this->tmpFile) + $this->fileLifeTime < time()) {
+                unlink($this->tmpFile);
+                $this->writeHead();
+            }
+        } else {
             $this->writeHead();
         }
 
-        if (!empty($categories)) {
-            $this->writeCategories($categories);
-            unset($categories);
+        try {
+            if (!empty($categories)) {
+                $this->writeCategories($categories);
+                unset($categories);
+            }
+
+            if (!empty($offers)) {
+                $this->writeOffers($offers);
+                unset($offers);
+            }
+
+            $dom = dom_import_simplexml(simplexml_load_file($this->tmpFile))->ownerDocument;
+            $dom->formatOutput = true;
+            $formatted = $dom->saveXML();
+
+            unset($dom, $this->xml);
+
+            file_put_contents($this->tmpFile, $formatted);
+            rename($this->tmpFile, $this->file);
+        } catch (Exception $e) {
+            unlink($this->tmpFile);
         }
-
-        if (!empty($offers)) {
-            $this->writeOffers($offers);
-            unset($offers);
-        }
-
-        $dom = dom_import_simplexml(simplexml_load_file($this->tmpFile))->ownerDocument;
-        $dom->formatOutput = true;
-        $formatted = $dom->saveXML();
-
-        unset($dom, $this->xml);
-
-        file_put_contents($this->tmpFile, $formatted);
-        rename($this->tmpFile, $this->file);
     }
 
     private function loadXml()
