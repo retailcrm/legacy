@@ -221,7 +221,7 @@ class Command
                     break;
                 case 'payment-statuses':
                     $reference = $builder->buildPaymentStatuses();
-                    $this->requestHelper->uploadDeliveryStatuses($reference);
+                    $this->requestHelper->uploadPaymentStatuses($reference);
                     break;
                 case 'statuses':
                     $reference = $builder->buildStatuses();
