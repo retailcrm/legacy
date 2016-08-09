@@ -41,11 +41,11 @@ class CustomersBuilder extends Builder
      */
     public function buildCustomersById($uidString)
     {
+        $uids = DataHelper::explodeUids($uidString);
         $query = $this->rule->getSQL('customers_uid');
         $handler = $this->rule->getHandler('CustomersHandler');
         $this->sql = $this->container->db->prepare($query);
         $this->sql->bindParam(':orderIds', $uids);
-        $uids = DataHelper::explodeUids($uidString);
 
         return $this->build($handler);
     }
@@ -74,11 +74,11 @@ class CustomersBuilder extends Builder
      */
     public function buildCustomersUpdateById($uidString)
     {
+        $uids = DataHelper::explodeUids($uidString);
         $query = $this->rule->getSQL('customers_update_uid');
         $handler = $this->rule->getHandler('CustomersHandler');
         $this->sql = $this->container->db->prepare($query);
         $this->sql->bindParam(':orderIds', $uids);
-        $uids = DataHelper::explodeUids($uidString);
 
         return $this->build($handler);
     }
