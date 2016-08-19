@@ -242,7 +242,7 @@ class Command
             $this->requestHelper->uploadPaymentTypes($paymentTypes);
 
             $paymentStatuses = $builder->buildPaymentStatuses();
-            $this->requestHelper->uploadDeliveryStatuses($paymentStatuses);
+            $this->requestHelper->uploadPaymentStatuses($paymentStatuses);
 
             $statuses = $builder->buildStatuses();
             $this->requestHelper->uploadStatuses($statuses);
