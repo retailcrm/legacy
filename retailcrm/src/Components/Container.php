@@ -59,7 +59,7 @@ class Container
                 );
 
                 $this->db->exec("set names utf8");
-                $this->db->exec("set global group_concat_max_len = 1000000");
+                $this->db->exec("set group_concat_max_len = 1000000");
                 $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
             }  catch (PDOException $e) {
                 CommandHelper::activateNotice('database');
