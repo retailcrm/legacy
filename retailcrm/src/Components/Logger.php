@@ -6,7 +6,7 @@ class Logger
     private $push;
     private $files;
 
-    public function __construct($rotate = true, $push = true, $files = 5)
+    public function __construct($rotate = true, $push = false, $files = 5)
     {
         $this->rotate = $rotate;
         $this->push = $push;
