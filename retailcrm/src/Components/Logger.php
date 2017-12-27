@@ -101,10 +101,9 @@ class Logger
     {
         $domain    = $this->container->domain;
         $recipient = $this->container->support;
-        $subject   = 'Legacy notification';
-        $headers   = 'From: noreply@retailcrm.ru' . "\r\n" .
-            'X-Mailer: PHP/' . phpversion();
-        $message = "New log message from $domain:\n\n$message";
+        $subject   = sprintf("Legacy notification from %s", $domain);
+        $headers   = sprintf("From: %s\r\nX-Mailer: PHP/%s", $this->container->notify, phpversion());
+        $message   = sprintf("New log message from %s:\n\n%s\n", $domain, $message);
 
         mail($recipient, $subject, $message, $headers);
     }
